@@ -18,7 +18,7 @@ import telran.ProPets.dto.PostDto;
 import telran.ProPets.service.PostService;
 
 @RestController
-@RequestMapping("/lostfound/{lang}/v1")
+@RequestMapping("/{lang}/v1")
 public class PostController {
 	
 	@Autowired
