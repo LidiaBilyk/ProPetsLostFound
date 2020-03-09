@@ -15,9 +15,9 @@ public class PostDto {
 	String userLogin;
 	LocalDateTime datePost;
 	String type;
-//	@Singular
+	@Singular
 	List<String> tags;
-//	@Singular
+	@Singular
 	List<String> photos;
 	Location location;
 	int radius;

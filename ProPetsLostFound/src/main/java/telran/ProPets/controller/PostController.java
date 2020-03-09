@@ -69,7 +69,7 @@ public class PostController {
 		return postService.getMatchingFounds(pageSize, pageNumber, postDto);
 	}
 	
-	@GetMapping("tags&colors")
+	@GetMapping("tagscolors")
 	public List<String> getTags(@RequestParam(value = "image_url") String imageUrl) {
 		return postService.getTags(imageUrl);
 	}
