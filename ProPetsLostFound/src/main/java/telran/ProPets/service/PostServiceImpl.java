@@ -1,5 +1,6 @@
 package telran.ProPets.service;
 
+import java.security.Principal;
 import java.time.LocalDateTime;
 
 import java.util.List;
@@ -27,6 +28,7 @@ import telran.ProPets.dto.PostDto;
 import telran.ProPets.dto.imagga.TagResponseDto;
 import telran.ProPets.dto.imagga.ColorResponseDto;
 import telran.ProPets.exceptions.ConflictException;
+import telran.ProPets.exceptions.ForbiddenException;
 import telran.ProPets.exceptions.NotFoundException;
 import telran.ProPets.model.Post;
 
@@ -36,7 +38,10 @@ public class PostServiceImpl implements PostService {
 	PostRepository postRepository;
 
 	@Override
-	public PostDto postLost(String login, PostDto postDto) {
+	public PostDto postLost(Principal principal, String login, PostDto postDto) {
+		if (!principal.getName().equals(login)) {
+			throw new ForbiddenException();
+		}
 		Post post = createNewPost(login, postDto);
 		post.setFound(false);
 		postRepository.save(post);
@@ -57,7 +62,10 @@ public class PostServiceImpl implements PostService {
 	}
 
 	@Override
-	public PostDto postFound(String login, PostDto postDto) {
+	public PostDto postFound(Principal principal, String login, PostDto postDto) {
+		if (!principal.getName().equals(login)) {
+			throw new ForbiddenException();
+		}
 		Post post = createNewPost(login, postDto);		
 		post.setFound(true);
 		postRepository.save(post);
@@ -86,8 +94,11 @@ public class PostServiceImpl implements PostService {
 	}
 
 	@Override
-	public PostDto updatePost(String id, PostDto postDto) {
+	public PostDto updatePost(Principal principal, String id, PostDto postDto) {
 		Post post = postRepository.findById(id).orElseThrow(() -> new NotFoundException());
+		if (!principal.getName().equals(post.getUserLogin())) {
+			throw new ForbiddenException();
+		}
 		if (postDto.getType() != null) {
 			post.setType(postDto.getType());
 		}
@@ -109,8 +120,11 @@ public class PostServiceImpl implements PostService {
 
 	@Transactional
 	@Override
-	public PostDto deletePost(String id) {
+	public PostDto deletePost(Principal principal, String id) {
 		Post post = postRepository.findById(id).orElseThrow(() -> new NotFoundException());
+		if (!principal.getName().equals(post.getUserLogin())) {
+			throw new ForbiddenException();
+		}
 		postRepository.deleteById(id);
 		return postToPostDto(post);
 	}

@@ -55,11 +55,13 @@ public class AuthenticationFilter implements Filter{
 			String jwt = restResponse.getHeaders().getFirst("X-Token");		
 			String userName = restResponse.getHeaders().getFirst("X-UserName");	
 			String avatar = restResponse.getHeaders().getFirst("X-Avatar");
+			String login = restResponse.getHeaders().getFirst("X-Login");
 			response.addHeader("X-Token", jwt);			
 			response.addHeader("X-UserName", userName);
 			response.addHeader("X-Avatar", avatar);
+			response.addHeader("X-Login", login);
 			
-			chain.doFilter(new WrapperRequest(request, userName), response);
+			chain.doFilter(new WrapperRequest(request, login), response);
 			return;
 		}
 		chain.doFilter(request, response);

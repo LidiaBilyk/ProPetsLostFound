@@ -1,5 +1,6 @@
 package telran.ProPets.controller;
 
+import java.security.Principal;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,13 +26,13 @@ public class PostController {
 	PostService postService;
 	
 	@PostMapping("/lost/{login:.*}")
-	public PostDto postLost(@PathVariable String login, @RequestBody PostDto postDto) {
-		return postService.postLost(login, postDto);
+	public PostDto postLost(Principal principal, @PathVariable String login, @RequestBody PostDto postDto) {
+		return postService.postLost(principal, login, postDto);
 	}
 	
 	@PostMapping("/found/{login:.*}")
-	public PostDto postFound(@PathVariable String login, @RequestBody PostDto postDto) {
-		return postService.postFound(login, postDto);
+	public PostDto postFound(Principal principal, @PathVariable String login, @RequestBody PostDto postDto) {
+		return postService.postFound(principal, login, postDto);
 	}
 
 	@GetMapping("/{id:.*}")
@@ -40,13 +41,13 @@ public class PostController {
 	}
 	
 	@PutMapping("/{id:.*}")
-	public PostDto updatePost(@PathVariable String id, @RequestBody PostDto postDto) {
-		return postService.updatePost(id, postDto);
+	public PostDto updatePost(Principal principal, @PathVariable String id, @RequestBody PostDto postDto) {
+		return postService.updatePost(principal, id, postDto);
 	}
 	
 	@DeleteMapping("/{id:.*}")
-	public PostDto deletePost(@PathVariable String id) {
-		return postService.deletePost(id);
+	public PostDto deletePost(Principal principal, @PathVariable String id) {
+		return postService.deletePost(principal, id);
 	}
 	
 	@GetMapping("/losts")
@@ -70,7 +71,7 @@ public class PostController {
 	}
 	
 	@GetMapping("tagscolors")
-	public List<String> getTags(@RequestParam(value = "image_url") String imageUrl) {
+	public List<String> getTags(@RequestParam("image_url") String imageUrl) {
 		return postService.getTags(imageUrl);
 	}
 	
