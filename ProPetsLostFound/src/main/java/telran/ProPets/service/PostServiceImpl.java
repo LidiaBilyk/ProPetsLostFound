@@ -1,6 +1,5 @@
 package telran.ProPets.service;
 
-import java.security.Principal;
 import java.time.LocalDateTime;
 
 import java.util.List;
@@ -17,12 +16,13 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import telran.ProPets.configuration.LostFoundConfiguration;
 import telran.ProPets.dao.PostRepository;
+
 import telran.ProPets.dto.PageDto;
 import telran.ProPets.dto.PostDto;
 import telran.ProPets.dto.imagga.TagResponseDto;
@@ -32,17 +32,18 @@ import telran.ProPets.exceptions.ForbiddenException;
 import telran.ProPets.exceptions.NotFoundException;
 import telran.ProPets.model.Post;
 
+
 @Service
 public class PostServiceImpl implements PostService {
+	
 	@Autowired
 	PostRepository postRepository;
+	@Autowired
+	LostFoundConfiguration lostFoundConfiguration;
 
 	@Override
-	public PostDto postLost(Principal principal, String login, PostDto postDto) {
-		if (!principal.getName().equals(login)) {
-			throw new ForbiddenException();
-		}
-		Post post = createNewPost(login, postDto);
+	public PostDto postLost(String login, PostDto postDto) {		
+		Post post = createNewPost(login, postDto);		
 		post.setFound(false);
 		postRepository.save(post);
 		return postToPostDto(post);
@@ -51,8 +52,7 @@ public class PostServiceImpl implements PostService {
 	private Post createNewPost(String login, PostDto postDto) {
 		return Post.builder()		
 		.datePost(LocalDateTime.now())
-		.userLogin(login)
-		.id(LocalDateTime.now().toString())
+		.userLogin(login)		
 		.type(postDto.getType())
 		.location(postDto.getLocation())
 		.radius(postDto.getRadius())
@@ -62,11 +62,8 @@ public class PostServiceImpl implements PostService {
 	}
 
 	@Override
-	public PostDto postFound(Principal principal, String login, PostDto postDto) {
-		if (!principal.getName().equals(login)) {
-			throw new ForbiddenException();
-		}
-		Post post = createNewPost(login, postDto);		
+	public PostDto postFound(String login, PostDto postDto) {		
+		Post post = createNewPost(login, postDto);	
 		post.setFound(true);
 		postRepository.save(post);
 		return postToPostDto(post);
@@ -94,11 +91,8 @@ public class PostServiceImpl implements PostService {
 	}
 
 	@Override
-	public PostDto updatePost(Principal principal, String id, PostDto postDto) {
-		Post post = postRepository.findById(id).orElseThrow(() -> new NotFoundException());
-		if (!principal.getName().equals(post.getUserLogin())) {
-			throw new ForbiddenException();
-		}
+	public PostDto updatePost(String id, PostDto postDto) {
+		Post post = postRepository.findById(id).orElseThrow(() -> new NotFoundException());		
 		if (postDto.getType() != null) {
 			post.setType(postDto.getType());
 		}
@@ -118,13 +112,9 @@ public class PostServiceImpl implements PostService {
 		return postToPostDto(post);
 	}
 
-	@Transactional
 	@Override
-	public PostDto deletePost(Principal principal, String id) {
+	public PostDto deletePost(String id) {
 		Post post = postRepository.findById(id).orElseThrow(() -> new NotFoundException());
-		if (!principal.getName().equals(post.getUserLogin())) {
-			throw new ForbiddenException();
-		}
 		postRepository.deleteById(id);
 		return postToPostDto(post);
 	}
@@ -160,17 +150,18 @@ public class PostServiceImpl implements PostService {
 //		String city = postDto.getLocation().getCity();
 //		List<String> tags = postDto.getTags();		
 //		Page<Post> page = postRepository.findLostsByFilter(pageable, type, country, city);
-		Post post = createPostForSearch(postDto);
-		post.setFound(false);		
+		Post post = createPostForSearch(postDto);	
+		post.setFound(false);
 		Example<Post> example = Example.of(post, createExampleMatcher());
 		Page<Post> page = postRepository.findAll(example, pageable);		
 		return pageToPageDto(page);
+
 
 	}
 
 	private ExampleMatcher createExampleMatcher() {
 		ExampleMatcher matcher = ExampleMatcher.matchingAll()
-				.withIgnorePaths("radius", "location.building", "location.latitude", "location.longitude")								
+				.withIgnorePaths("radius", "tags", "photos", "location.building", "location.latitude", "location.longitude")								
 				.withIgnoreCase();
 		return matcher;
 	}
@@ -178,13 +169,12 @@ public class PostServiceImpl implements PostService {
 	@Override
 	public PageDto getMatchingFounds(Integer itemsOnPage, Integer currentPage, PostDto postDto) {
 		Pageable pageable = PageRequest.of(currentPage, itemsOnPage);
-		Post post = createPostForSearch(postDto);
-		post.setFound(true);
+		Post post = createPostForSearch(postDto);	
+		post.setFound(true);		
 		Example<Post> example = Example.of(post, createExampleMatcher());
 		Page<Post> page = postRepository.findAll(example, pageable);
 		return pageToPageDto(page);
 	}
-
 
 	private Post createPostForSearch(PostDto postDto) {		
 		return Post.builder()
@@ -197,9 +187,9 @@ public class PostServiceImpl implements PostService {
 
 	@Override
 	public List<String> getTags(String imageUrl) {
-		String colorUrl = "https://api.imagga.com/v2/colors";
-		String tagUrl = "https://api.imagga.com/v2/tags";
-		String headerKey = "Basic YWNjXzc1NjU0MzllNDQ5ZjAyOTozZTNlYjQzMmI0YzFmZDEyNGM3ZTI2MDk4NTFmZDk0Ng==";
+		String colorUrl = lostFoundConfiguration.getColorUrl();
+		String tagUrl = lostFoundConfiguration.getTagUrl();
+		String headerKey = lostFoundConfiguration.getHeaderKey();
 		HttpHeaders headers = new HttpHeaders();
 		headers.add("Authorization", headerKey);		
 		RestTemplate restTemplate = new RestTemplate();
@@ -225,4 +215,5 @@ public class PostServiceImpl implements PostService {
  		tags.addAll(colors);
 		return tags;
 	}
+
 }

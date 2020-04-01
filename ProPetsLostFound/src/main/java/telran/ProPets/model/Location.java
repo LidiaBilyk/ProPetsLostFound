@@ -1,7 +1,5 @@
 package telran.ProPets.model;
 
-import javax.persistence.Embeddable;
-
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -9,7 +7,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
-@Embeddable
+
 public class Location {
 	String country;
     String city;

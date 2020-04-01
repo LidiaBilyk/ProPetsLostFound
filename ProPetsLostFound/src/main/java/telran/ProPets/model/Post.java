@@ -1,15 +1,11 @@
 package telran.ProPets.model;
 
 import java.io.Serializable;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import javax.persistence.ElementCollection;
-import javax.persistence.Embedded;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.Id;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -18,6 +14,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.Singular;
+import lombok.ToString;
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -25,7 +22,7 @@ import lombok.Singular;
 @Setter
 @Builder
 @EqualsAndHashCode(of = {"id"})
-@Entity
+@Document(collection = "posts")
 public class Post implements Serializable{
 
 	/**
@@ -37,13 +34,12 @@ public class Post implements Serializable{
 	String userLogin;
 	LocalDateTime datePost;
 	String type;
-	@ElementCollection	
+	@Singular
 	List<String> tags;
-	@ElementCollection	
+	@Singular
 	List<String> photos;
-	@Embedded
 	Location location;
-	int radius;
+	int radius;	
 	boolean found;
 	
 }
