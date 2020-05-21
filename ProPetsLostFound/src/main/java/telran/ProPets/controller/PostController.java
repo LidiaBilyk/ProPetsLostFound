@@ -60,13 +60,13 @@ public class PostController {
 	}
 	
 	@PostMapping("/losts/filter")
-	public PageDto getMatchingLosts(@RequestParam Integer pageSize, @RequestParam Integer pageNumber, @RequestBody PostDto postDto) {
-		return postService.getMatchingLosts(pageSize, pageNumber, postDto);
+	public PageDto getMatchingLosts(@RequestParam Integer itemOnPage, @RequestParam Integer currentPage, @RequestBody PostDto postDto) {
+		return postService.getMatchingLosts(itemOnPage, currentPage, postDto);
 	}
 	
 	@PostMapping("/founds/filter")
-	public PageDto getMatchingFounds(@RequestParam Integer pageSize, @RequestParam Integer pageNumber, @RequestBody PostDto postDto) {
-		return postService.getMatchingFounds(pageSize, pageNumber, postDto);
+	public PageDto getMatchingFounds(@RequestParam Integer itemsOnPage, @RequestParam Integer currentPage, @RequestBody PostDto postDto) {
+		return postService.getMatchingFounds(itemsOnPage, currentPage, postDto);
 	}
 	
 	@GetMapping("/tagscolors")
