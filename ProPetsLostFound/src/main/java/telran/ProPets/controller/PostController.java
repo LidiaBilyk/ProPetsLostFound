@@ -50,18 +50,18 @@ public class PostController {
 	}
 	
 	@GetMapping("/losts")
-	public PageDto getLosts(@RequestParam Integer pageSize, @RequestParam Integer pageNumber) {
-		return postService.getLosts(pageSize, pageNumber);
+	public PageDto getLosts(@RequestParam Integer itemsOnPage, @RequestParam Integer currentPage) {
+		return postService.getLosts(itemsOnPage, currentPage);
 	}
 	
 	@GetMapping("/founds")
-	public PageDto getFounds(@RequestParam Integer pageSize, @RequestParam Integer pageNumber) {
-		return postService.getFounds(pageSize, pageNumber);
+	public PageDto getFounds(@RequestParam Integer itemsOnPage, @RequestParam Integer currentPage) {
+		return postService.getFounds(itemsOnPage, currentPage);
 	}
 	
 	@PostMapping("/losts/filter")
-	public PageDto getMatchingLosts(@RequestParam Integer itemOnPage, @RequestParam Integer currentPage, @RequestBody PostDto postDto) {
-		return postService.getMatchingLosts(itemOnPage, currentPage, postDto);
+	public PageDto getMatchingLosts(@RequestParam Integer itemsOnPage, @RequestParam Integer currentPage, @RequestBody PostDto postDto) {
+		return postService.getMatchingLosts(itemsOnPage, currentPage, postDto);
 	}
 	
 	@PostMapping("/founds/filter")
