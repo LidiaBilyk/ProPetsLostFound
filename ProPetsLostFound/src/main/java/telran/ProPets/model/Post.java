@@ -14,7 +14,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.Singular;
-import lombok.ToString;
+
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -31,15 +31,16 @@ public class Post implements Serializable{
 	private static final long serialVersionUID = 1L;
 	@Id
 	String id;
+	boolean typePost;
 	String userLogin;
+    String username; 
+    String avatar;
 	LocalDateTime datePost;
 	String type;
 	@Singular
 	List<String> tags;
 	@Singular
 	List<String> photos;
-	Location location;
-	int radius;	
-	boolean found;
-	
+	Address address;	
+    Location location;
 }

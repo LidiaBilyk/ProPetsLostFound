@@ -1,6 +1,7 @@
 package telran.ProPets.controller;
 
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -74,4 +75,8 @@ public class PostController {
 		return postService.getTags(imageUrl);
 	}
 
+	@PostMapping("/userdata")
+	public Set<PostDto> getPostsForUserData(@RequestBody Set<String> postId) {
+		return postService.getPostsForUserData(postId);
+	}
 }

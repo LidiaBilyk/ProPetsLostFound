@@ -24,4 +24,12 @@ public class LostFoundConfiguration {
 	String tagUrl;
 	@Value("${headerKey}")
 	String headerKey;
+	@Value("${checkJwtUri}")
+	String checkJwtUri;
+	@Value("${activityUri}")
+	String activityUri;
+	@Value("${spring.application.name}")
+	String applicationName;
+	@Value("${radius}")
+	Integer radius;
 }

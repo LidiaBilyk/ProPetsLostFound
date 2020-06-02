@@ -14,7 +14,7 @@ public class CustomSecurity {
 	@Autowired
 	PostRepository postRepository;
 	
-	public boolean chechAuthorityForPost(String login, Principal principal) {
+	public boolean checkAuthorityForPost(String login, Principal principal) {
 		return login.equals(principal.getName());
 	}
 	

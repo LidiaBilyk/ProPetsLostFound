@@ -40,34 +40,41 @@ public class CustomFilter implements Filter {
 		String path = request.getServletPath();
 		String method = request.getMethod(); 					
 				
-		Principal principal = request.getUserPrincipal();
-		
-		if (checkPointCutLoginLost(path, method)) {
-			UriTemplate templateLoginLost = new UriTemplate(lostFoundConfiguration.getTemplateLoginLost());
-			String pathLogin = templateLoginLost.match(request.getRequestURI()).get("login");			
-			if (!customSecurity.chechAuthorityForPost(pathLogin, principal)) {
-				response.sendError(403, "Access denied");
-				return;
+		if (!checkPointCut(path, method)) {
+			Principal principal = request.getUserPrincipal();
+			if (checkPointCutLoginLost(path, method)) {
+				UriTemplate templateLoginLost = new UriTemplate(lostFoundConfiguration.getTemplateLoginLost());
+				String pathLogin = templateLoginLost.match(request.getRequestURI()).get("login");
+				if (!customSecurity.checkAuthorityForPost(pathLogin, principal)) {
+					response.sendError(403, "Access denied");
+					return;
+				}
 			}
-		}
-		if (checkPointCutLoginFound(path, method)) {
-			UriTemplate templateLoginFound = new UriTemplate(lostFoundConfiguration.getTemplateLoginFound());
-			String pathLogin = templateLoginFound.match(request.getRequestURI()).get("login");			
-			if (!customSecurity.chechAuthorityForPost(pathLogin, principal)) {
-				response.sendError(403, "Access denied");
-				return;
+			if (checkPointCutLoginFound(path, method)) {
+				UriTemplate templateLoginFound = new UriTemplate(lostFoundConfiguration.getTemplateLoginFound());
+				String pathLogin = templateLoginFound.match(request.getRequestURI()).get("login");
+				if (!customSecurity.checkAuthorityForPost(pathLogin, principal)) {
+					response.sendError(403, "Access denied");
+					return;
+				}
 			}
-		}
-		if (checkPointCutId(path, method)) {	
-			UriTemplate templateId = new UriTemplate(lostFoundConfiguration.getTemplateId());
-			String pathId = templateId.match(request.getRequestURI()).get("id");			
-			if (!customSecurity.checkAuthorityForDeletePost(pathId, principal)) {
-				response.sendError(403, "Access denied");
-				return;
+			if (checkPointCutId(path, method)) {
+				UriTemplate templateId = new UriTemplate(lostFoundConfiguration.getTemplateId());
+				String pathId = templateId.match(request.getRequestURI()).get("id");
+				if (!customSecurity.checkAuthorityForDeletePost(pathId, principal)) {
+					response.sendError(403, "Access denied");
+					return;
+				}
 			}
-		}		
-		chain.doFilter(new WrapperRequest(request, principal.getName()), response);	
-		
+			chain.doFilter(new WrapperRequest(request, principal.getName()), response);
+			return;
+		}	
+		chain.doFilter(request, response);
+	}
+	
+	private boolean checkPointCut(String path, String method) {
+		boolean check = path.matches(".*/userdata");		
+		return check;
 	}
 	
 //	check updatePost & deletePost methods

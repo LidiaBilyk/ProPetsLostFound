@@ -1,9 +1,13 @@
 package telran.ProPets.service;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.time.LocalDateTime;
-
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Example;
@@ -11,6 +15,9 @@ import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.geo.Distance;
+import org.springframework.data.geo.Metrics;
+import org.springframework.data.geo.Point;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.RequestEntity;
@@ -19,16 +26,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
-
 import telran.ProPets.configuration.LostFoundConfiguration;
 import telran.ProPets.dao.PostRepository;
-
 import telran.ProPets.dto.PageDto;
 import telran.ProPets.dto.PostDto;
 import telran.ProPets.dto.imagga.TagResponseDto;
 import telran.ProPets.dto.imagga.ColorResponseDto;
+import telran.ProPets.exceptions.BadRequestException;
 import telran.ProPets.exceptions.ConflictException;
-import telran.ProPets.exceptions.ForbiddenException;
 import telran.ProPets.exceptions.NotFoundException;
 import telran.ProPets.model.Post;
 
@@ -44,18 +49,39 @@ public class PostServiceImpl implements PostService {
 	@Override
 	public PostDto postLost(String login, PostDto postDto) {		
 		Post post = createNewPost(login, postDto);		
-		post.setFound(false);
+		post.setTypePost(false);
 		postRepository.save(post);
+		sendToActivities(post.getUserLogin(), post.getId(), HttpMethod.PUT);
 		return postToPostDto(post);
 	}
 	
+	private void sendToActivities(String userLogin, String id, HttpMethod method) {
+		RestTemplate restTemplate = new RestTemplate();	
+		String activityTemplate = "/activity/";
+		HttpHeaders headers = new HttpHeaders();
+		headers.add("X-ServiceName", lostFoundConfiguration.getApplicationName());		
+		try {
+			RequestEntity<String> restRequest = new RequestEntity<>(headers, method, 			
+					new URI(lostFoundConfiguration.getActivityUri().concat(userLogin).concat(activityTemplate).concat(id)));
+			ResponseEntity<String>restResponse = restTemplate.exchange(restRequest, String.class);
+		} catch (RestClientException e) {
+			throw new ConflictException();
+		} 
+		catch (URISyntaxException e) {	
+			e.printStackTrace();
+			throw new BadRequestException();
+		}		
+	}
+
 	private Post createNewPost(String login, PostDto postDto) {
 		return Post.builder()		
 		.datePost(LocalDateTime.now())
-		.userLogin(login)		
+		.userLogin(login)
+		.username(postDto.getUsername())
+		.avatar(postDto.getAvatar())
 		.type(postDto.getType())
+		.address(postDto.getAddress())
 		.location(postDto.getLocation())
-		.radius(postDto.getRadius())
 		.tags(postDto.getTags())
 		.photos(postDto.getPhotos())		
 		.build();
@@ -64,7 +90,7 @@ public class PostServiceImpl implements PostService {
 	@Override
 	public PostDto postFound(String login, PostDto postDto) {		
 		Post post = createNewPost(login, postDto);	
-		post.setFound(true);
+		post.setTypePost(true);
 		postRepository.save(post);
 		return postToPostDto(post);
 	}
@@ -74,11 +100,14 @@ public class PostServiceImpl implements PostService {
 		List<String> tagList = post.getTags();
 		return PostDto.builder()
 				.id(post.getId())
+				.typePost(post.isTypePost())
 				.userLogin(post.getUserLogin())
+				.username(post.getUsername())
+				.avatar(post.getAvatar())
 				.datePost(post.getDatePost())
 				.type(post.getType())
+				.address(post.getAddress())	
 				.location(post.getLocation())
-				.radius(post.getRadius())
 				.tags(tagList)
 				.photos(postList)
 				.build();
@@ -96,12 +125,10 @@ public class PostServiceImpl implements PostService {
 		if (postDto.getType() != null) {
 			post.setType(postDto.getType());
 		}
-		if (postDto.getLocation() != null) {
-			post.setLocation(postDto.getLocation());
+		if (postDto.getAddress() != null) {
+			post.setAddress(postDto.getAddress());
 		}
-		if (postDto.getRadius() != 0) {
-			post.setRadius(postDto.getRadius());
-		}
+
 		if (postDto.getTags() != null) {
 			post.setTags(postDto.getTags());
 		}
@@ -116,13 +143,14 @@ public class PostServiceImpl implements PostService {
 	public PostDto deletePost(String id) {
 		Post post = postRepository.findById(id).orElseThrow(() -> new NotFoundException());
 		postRepository.deleteById(id);
+		sendToActivities(post.getUserLogin(), id, HttpMethod.DELETE);
 		return postToPostDto(post);
 	}
 
 	@Override
 	public PageDto getLosts(Integer itemsOnPage, Integer currentPage) {
 		Pageable pageable = PageRequest.of(currentPage, itemsOnPage);
-		Page<Post> page = postRepository.findByFoundFalse(pageable);
+		Page<Post> page = postRepository.findByTypePostFalse(pageable);
 		return pageToPageDto(page);		
 	}
 	
@@ -138,30 +166,26 @@ public class PostServiceImpl implements PostService {
 	@Override
 	public PageDto getFounds(Integer itemsOnPage, Integer currentPage) {
 		Pageable pageable = PageRequest.of(currentPage, itemsOnPage);
-		Page<Post> page = postRepository.findByFoundTrue(pageable);
+		Page<Post> page = postRepository.findByTypePostTrue(pageable);
 		return pageToPageDto(page);		
 	}
 
 	@Override
 	public PageDto getMatchingLosts(Integer itemsOnPage, Integer currentPage, PostDto postDto) {
 		Pageable pageable = PageRequest.of(currentPage, itemsOnPage);
-//		String type = postDto.getType();
-//		String country = postDto.getLocation().getCountry();
-//		String city = postDto.getLocation().getCity();
-//		List<String> tags = postDto.getTags();		
-//		Page<Post> page = postRepository.findLostsByFilter(pageable, type, country, city);
-		Post post = createPostForSearch(postDto);	
-		post.setFound(false);
+		Post post = createPostExample(postDto);	
+		post.setTypePost(false);		
+		Point point = new Point(postDto.getLocation().getLongitude(), postDto.getLocation().getLatitude());
+		Distance distance = new Distance(lostFoundConfiguration.getRadius(), Metrics.KILOMETERS);
 		Example<Post> example = Example.of(post, createExampleMatcher());
-		Page<Post> page = postRepository.findAll(example, pageable);		
+//		Page<Post> page = postRepository.findAll(example, pageable);	
+		Page<Post> page = postRepository.findByLocationNear(point, distance, pageable);
 		return pageToPageDto(page);
-
-
 	}
 
-	private ExampleMatcher createExampleMatcher() {
+	private ExampleMatcher createExampleMatcher() {			
 		ExampleMatcher matcher = ExampleMatcher.matchingAll()
-				.withIgnorePaths("radius", "tags", "photos", "location.building", "location.latitude", "location.longitude")								
+				.withIgnorePaths("tags", "location.lalitude","location.longitude", "address.building", "address.street", "address.city", "address.country")								
 				.withIgnoreCase();
 		return matcher;
 	}
@@ -169,18 +193,22 @@ public class PostServiceImpl implements PostService {
 	@Override
 	public PageDto getMatchingFounds(Integer itemsOnPage, Integer currentPage, PostDto postDto) {
 		Pageable pageable = PageRequest.of(currentPage, itemsOnPage);
-		Post post = createPostForSearch(postDto);	
-		post.setFound(true);		
+		Post post = createPostExample(postDto);	
+		post.setTypePost(true);
+//		Point point = new Point(postDto.getLocation().getLongitude(), postDto.getLocation().getLatitude());
+//		Distance distance = new Distance(lostFoundConfiguration.getRadius(), Metrics.KILOMETERS);
 		Example<Post> example = Example.of(post, createExampleMatcher());
 		Page<Post> page = postRepository.findAll(example, pageable);
+//		Page<Post> page = postRepository.findByLocationNear(point, distance, pageable);
 		return pageToPageDto(page);
 	}
 
-	private Post createPostForSearch(PostDto postDto) {		
+	private Post createPostExample(PostDto postDto) {		
 		return Post.builder()
 				.type(postDto.getType())
-				.location(postDto.getLocation())
-				.radius(postDto.getRadius())
+				.typePost(postDto.isTypePost())
+				.address(postDto.getAddress())
+				.location(postDto.getLocation())				
 				.tags(postDto.getTags())
 				.build();
 	}
@@ -200,7 +228,7 @@ public class PostServiceImpl implements PostService {
 		try {
 			request = new RequestEntity<>(headers, HttpMethod.GET, builder.build().toUri());
 			responseColor = restTemplate.exchange(request, ColorResponseDto.class);
-		} catch (RestClientException e1) {
+		} catch (RestClientException e) {
 			throw new ConflictException();			
 		}		 
 		List<String> colors = responseColor.getBody().getResult().getColors().getForegroundColors().stream().map(e -> e.getParentName()).distinct().collect(Collectors.toList());
@@ -216,4 +244,13 @@ public class PostServiceImpl implements PostService {
 		return tags;
 	}
 
+	@Override
+	public Set<PostDto> getPostsForUserData(Set<String> postId) {		
+		Iterable<Post> res = postRepository.findAllById(postId);
+		Set<PostDto> result = StreamSupport.stream(res.spliterator(), false)
+		.map(d -> postToPostDto(d))
+		.sorted((p1, p2) -> p2.getDatePost().compareTo(p1.getDatePost()))
+		.collect(Collectors.toSet());		
+		return result;
+	}
 }

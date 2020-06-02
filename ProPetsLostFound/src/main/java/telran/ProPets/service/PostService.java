@@ -1,10 +1,10 @@
 package telran.ProPets.service;
 
 import java.util.List;
+import java.util.Set;
 
 import telran.ProPets.dto.PageDto;
 import telran.ProPets.dto.PostDto;
-
 
 public interface PostService {
 	PostDto postLost (String login, PostDto postDto);
@@ -17,5 +17,5 @@ public interface PostService {
 	PageDto getMatchingLosts(Integer itemsOnPage, Integer currentPage, PostDto postDto);
 	PageDto getMatchingFounds(Integer itemsOnPage, Integer currentPage, PostDto postDto);
 	List<String> getTags(String imageUrl);	
-
+	Set<PostDto> getPostsForUserData(Set<String> postId);
 }

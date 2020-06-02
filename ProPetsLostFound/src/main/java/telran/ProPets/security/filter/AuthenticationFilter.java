@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.Principal;
+
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -13,6 +14,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -25,9 +27,14 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
+import telran.ProPets.configuration.LostFoundConfiguration;
+
+
 @Service
 @Order(10)
 public class AuthenticationFilter implements Filter{
+	@Autowired
+	LostFoundConfiguration lostFoundConfiguration;
 
 	@Override
 	public void doFilter(ServletRequest req, ServletResponse resp, FilterChain chain)
@@ -35,40 +42,38 @@ public class AuthenticationFilter implements Filter{
 		HttpServletRequest request = (HttpServletRequest) req;
 		HttpServletResponse response = (HttpServletResponse) resp;
 		String path = request.getServletPath();
-
-		if (!path.startsWith("/h2")) {
+		String method = request.getMethod();
+		if (!checkPointCut(path, method)) {				
 			String auth = request.getHeader("X-Token");
 			HttpHeaders headers = new HttpHeaders();
 			headers.add("X-Token", auth);
 			RestTemplate restTemplate = new RestTemplate();	
 			ResponseEntity<String> restResponse = null;
-			RequestEntity<String> restRequest = null;
 			try {
-				restRequest = new RequestEntity<>(headers, HttpMethod.GET, new URI("https://propetsapp.herokuapp.com/account/en/v1/token/validation"));				
+				RequestEntity<String> restRequest = new RequestEntity<>(headers, HttpMethod.GET, new URI(lostFoundConfiguration.getCheckJwtUri()));				
 				restResponse = restTemplate.exchange(restRequest, String.class);				
 			} catch (URISyntaxException e) {
 				response.sendError(400, "Bad request");
 			}catch (HttpClientErrorException e) {				
-				if (e.getStatusCode() != HttpStatus.OK) {			
+				if (e.getStatusCode() != HttpStatus.OK) {					
 					response.sendError(401, "Header Authorization is not valid");
 					return;
 				}
-			}			
-			String jwt = restResponse.getHeaders().getFirst("X-Token");		
-			String userName = restResponse.getHeaders().getFirst("X-UserName");	
-			String avatar = restResponse.getHeaders().getFirst("X-Avatar");
-			String login = restResponse.getHeaders().getFirst("X-Login");
-			response.addHeader("X-Token", jwt);			
-			response.addHeader("X-UserName", userName);
-			response.addHeader("X-Avatar", avatar);
-			response.addHeader("X-Login", login);
-			
+			}
+			String jwt = restResponse.getHeaders().getFirst("X-Token");	
+			String login = restResponse.getHeaders().getFirst("X-Login");		
+			response.addHeader("X-Token", jwt);				
 			chain.doFilter(new WrapperRequest(request, login), response);
 			return;
-		}
+		}				
 		chain.doFilter(request, response);
 	}
 	
+	private boolean checkPointCut(String path, String method) {
+		boolean check = path.matches(".*/userdata");		
+		return check;
+	}
+
 	private class WrapperRequest extends HttpServletRequestWrapper {
 
 		String user;
@@ -89,5 +94,4 @@ public class AuthenticationFilter implements Filter{
 			};
 		}
 	}
-
 }
