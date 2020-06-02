@@ -4,6 +4,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -26,6 +27,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
+
+import com.mongodb.BasicDBList;
+
 import telran.ProPets.configuration.LostFoundConfiguration;
 import telran.ProPets.dao.PostRepository;
 import telran.ProPets.dto.PageDto;
@@ -179,13 +183,13 @@ public class PostServiceImpl implements PostService {
 		Distance distance = new Distance(lostFoundConfiguration.getRadius(), Metrics.KILOMETERS);
 		Example<Post> example = Example.of(post, createExampleMatcher());
 //		Page<Post> page = postRepository.findAll(example, pageable);	
-		Page<Post> page = postRepository.findByLocationNear(point, distance, pageable);
+		Page<Post> page = postRepository.findByLocationNear(point, distance, example, pageable);
 		return pageToPageDto(page);
 	}
 
 	private ExampleMatcher createExampleMatcher() {			
 		ExampleMatcher matcher = ExampleMatcher.matchingAll()
-				.withIgnorePaths("tags", "location.lalitude","location.longitude", "address.building", "address.street", "address.city", "address.country")								
+				.withIgnorePaths( "photos", "address.building", "location.longitude", "location.latitude", "tags")
 				.withIgnoreCase();
 		return matcher;
 	}
@@ -205,11 +209,9 @@ public class PostServiceImpl implements PostService {
 
 	private Post createPostExample(PostDto postDto) {		
 		return Post.builder()
-				.type(postDto.getType())
-				.typePost(postDto.isTypePost())
+				.type(postDto.getType())	
 				.address(postDto.getAddress())
-				.location(postDto.getLocation())				
-				.tags(postDto.getTags())
+				.location(postDto.getLocation())
 				.build();
 	}
 
@@ -246,10 +248,9 @@ public class PostServiceImpl implements PostService {
 
 	@Override
 	public Set<PostDto> getPostsForUserData(Set<String> postId) {		
-		Iterable<Post> res = postRepository.findAllById(postId);
+		Iterable<Post> res = postRepository.findAllById(postId);		
 		Set<PostDto> result = StreamSupport.stream(res.spliterator(), false)
-		.map(d -> postToPostDto(d))
-		.sorted((p1, p2) -> p2.getDatePost().compareTo(p1.getDatePost()))
+		.map(d -> postToPostDto(d))		
 		.collect(Collectors.toSet());		
 		return result;
 	}
