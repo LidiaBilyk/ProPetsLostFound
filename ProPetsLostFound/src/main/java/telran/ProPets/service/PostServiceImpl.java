@@ -4,12 +4,9 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
@@ -27,9 +24,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
-
-import com.mongodb.BasicDBList;
-
 import telran.ProPets.configuration.LostFoundConfiguration;
 import telran.ProPets.dao.PostRepository;
 import telran.ProPets.dto.PageDto;
@@ -84,6 +78,7 @@ public class PostServiceImpl implements PostService {
 		.username(postDto.getUsername())
 		.avatar(postDto.getAvatar())
 		.type(postDto.getType())
+		.breed(postDto.getBreed())
 		.address(postDto.getAddress())
 		.location(postDto.getLocation())
 		.tags(postDto.getTags())
@@ -110,6 +105,7 @@ public class PostServiceImpl implements PostService {
 				.avatar(post.getAvatar())
 				.datePost(post.getDatePost())
 				.type(post.getType())
+				.breed(post.getBreed())
 				.address(post.getAddress())	
 				.location(post.getLocation())
 				.tags(tagList)
@@ -129,10 +125,12 @@ public class PostServiceImpl implements PostService {
 		if (postDto.getType() != null) {
 			post.setType(postDto.getType());
 		}
+		if (postDto.getBreed() != null) {
+			post.setBreed(postDto.getBreed());
+		}
 		if (postDto.getAddress() != null) {
 			post.setAddress(postDto.getAddress());
 		}
-
 		if (postDto.getTags() != null) {
 			post.setTags(postDto.getTags());
 		}
@@ -209,9 +207,11 @@ public class PostServiceImpl implements PostService {
 
 	private Post createPostExample(PostDto postDto) {		
 		return Post.builder()
-				.type(postDto.getType())	
+				.type(postDto.getType())
+				.breed(postDto.getBreed())
 				.address(postDto.getAddress())
 				.location(postDto.getLocation())
+				.tags(postDto.getTags())
 				.build();
 	}
 

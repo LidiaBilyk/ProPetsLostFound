@@ -37,6 +37,7 @@ public class Post implements Serializable{
     String avatar;
 	LocalDateTime datePost;
 	String type;
+	String breed;
 	@Singular
 	List<String> tags;
 	@Singular

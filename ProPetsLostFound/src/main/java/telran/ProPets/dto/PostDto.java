@@ -19,6 +19,7 @@ public class PostDto {
     String avatar;
 	LocalDateTime datePost;
 	String type;
+	String breed;
 	@Singular
 	List<String> tags;
 	@Singular
