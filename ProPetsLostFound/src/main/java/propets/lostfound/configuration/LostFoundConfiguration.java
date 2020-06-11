@@ -34,6 +34,4 @@ public class LostFoundConfiguration {
 	Integer radius;
 	@Value("${asyncSearchUri}")
 	String asyncSearchUri;
-	@Value("${test}")
-	String test;
 }
