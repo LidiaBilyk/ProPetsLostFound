@@ -60,7 +60,8 @@ public class PostServiceImpl implements PostService {
 	private void sendToAsyncSearch(Post post) {
 		RestTemplate restTemplate = new RestTemplate();		
 		try {
-			RequestEntity<PostDto> requestEntity = new RequestEntity<PostDto>(postToPostDto(post), HttpMethod.POST, new URI(lostFoundConfiguration.getAsyncSearchUri()));
+			RequestEntity<PostDto> requestEntity = new RequestEntity<PostDto>(postToPostDto(post), HttpMethod.POST, 
+					new URI(lostFoundConfiguration.getAsyncSearchUri()));
 			ResponseEntity<String> responseEntity = restTemplate.exchange(requestEntity, String.class);
 		} catch (RestClientException e) {
 			throw new ConflictException();
