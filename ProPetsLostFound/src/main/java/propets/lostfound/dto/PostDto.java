@@ -5,10 +5,12 @@ import java.util.List;
 
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.Singular;
 import propets.lostfound.model.Address;
 import propets.lostfound.model.Location;
 
+@Setter
 @Getter
 @Builder
 public class PostDto {

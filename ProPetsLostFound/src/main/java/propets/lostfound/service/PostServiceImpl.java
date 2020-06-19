@@ -8,14 +8,14 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Example;
-import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.geo.Distance;
-import org.springframework.data.geo.Metrics;
 import org.springframework.data.geo.Point;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.repository.support.PageableExecutionUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.RequestEntity;
@@ -24,7 +24,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
-
 import propets.lostfound.configuration.LostFoundConfiguration;
 import propets.lostfound.dao.PostRepository;
 import propets.lostfound.dto.PageDto;
@@ -46,6 +45,8 @@ public class PostServiceImpl implements PostService {
 	PostRepository postRepository;
 	@Autowired
 	LostFoundConfiguration lostFoundConfiguration;
+	@Autowired
+	MongoTemplate mongoTemplate;
 
 	@Override
 	public PostDto postLost(String login, PostDto postDto) {		
@@ -95,6 +96,7 @@ public class PostServiceImpl implements PostService {
 		.username(postDto.getUsername())
 		.avatar(postDto.getAvatar())
 		.type(postDto.getType())
+		.sex(postDto.getSex())
 		.breed(postDto.getBreed())
 		.address(postDto.getAddress())
 		.location(postDto.getLocation())
@@ -199,47 +201,51 @@ public class PostServiceImpl implements PostService {
 	}
 
 	@Override
-	public PageDto getMatchingLosts(Integer itemsOnPage, Integer currentPage, PostDto postDto) {
-		Pageable pageable = PageRequest.of(currentPage, itemsOnPage);
-		Post post = createPostExample(postDto);	
-		post.setTypePost(false);		
-		Point point = new Point(postDto.getLocation().getLongitude(), postDto.getLocation().getLatitude());
-		Distance distance = new Distance(lostFoundConfiguration.getRadius(), Metrics.KILOMETERS);
-		Example<Post> example = Example.of(post, createExampleMatcher());
-//		Page<Post> page = postRepository.findAll(example, pageable);	
-		Page<Post> page = postRepository.findByLocationNear(point, distance, example, pageable);
-		return pageToPageDto(page);
+	public PageDto getMatchingLosts(Integer itemsOnPage, Integer currentPage, PostDto postDto) {		
+		postDto.setTypePost(false);	
+		return queryBuilder(itemsOnPage, currentPage, postDto);
 	}
 
-	private ExampleMatcher createExampleMatcher() {			
-		ExampleMatcher matcher = ExampleMatcher.matchingAll()
-				.withIgnorePaths( "photos", "address.building", "location.longitude", "location.latitude", "tags")
-				.withIgnoreCase();
-		return matcher;
+	private PageDto queryBuilder(Integer itemsOnPage, Integer currentPage, PostDto postDto) {
+		Pageable pageable = PageRequest.of(currentPage, itemsOnPage);		
+		Query dynamicQuery = new Query();
+		Criteria typePostCriteria = Criteria.where("typePost").is(postDto.isTypePost());
+		dynamicQuery.addCriteria(typePostCriteria);
+		if (postDto.getType() != null) {
+			Criteria typeCriteria = Criteria.where("type").regex("\\Q" + postDto.getType() + "\\E", "i");			
+//			Criteria orType = new Criteria().orOperator(typeCriteria,Criteria.where("type").is(null));    =====> doesn't need, not null in DB
+			dynamicQuery.addCriteria(typeCriteria);
+		}
+		if (postDto.getSex() != null) {						
+		    Criteria orSex =  Criteria.where("sex").in(postDto.getSex(), null);
+			dynamicQuery.addCriteria(orSex);
+		}
+		if (postDto.getBreed() != null) {			
+			Criteria orBreed = Criteria.where("breed").in("/^" + postDto.getBreed() + "/i", null);
+			dynamicQuery.addCriteria(orBreed);
+		}
+		if (postDto.getTags() != null) {	
+			Criteria tagsCriteria = Criteria.where("tags").all(postDto.getTags());
+			dynamicQuery.addCriteria(tagsCriteria);
+		}
+		if (postDto.getLocation() != null) {
+			Point point = new Point(postDto.getLocation().getLongitude(), postDto.getLocation().getLatitude());
+			Criteria locationCriteria = Criteria.where("location").nearSphere(new Point(point)).maxDistance(lostFoundConfiguration.getRadius()/lostFoundConfiguration.getDistanceMultiplier());
+			dynamicQuery.addCriteria(locationCriteria);
+//			NearQuery nearQuery = NearQuery.near(postDto.getLocation().getLongitude(), postDto.getLocation().getLatitude())
+//					.maxDistance(lostFoundConfiguration.getRadius(), Metrics.KILOMETERS).query(dynamicQuery).with(pageable);
+//			GeoResults<Post> geoRes = mongoTemplate.geoNear(nearQuery, Post.class);
+//			List<Post> res = StreamSupport.stream(geoRes.spliterator(), false).map(g -> g.getContent()).collect(Collectors.toList());
+//			return PageableExecutionUtils.getPage(res, pageable, () -> mongoTemplate.count(nearQuery, Post.class));                    // pageable doesn't wooork((((
+		}		
+		List<Post> result = mongoTemplate.find(dynamicQuery.with(pageable), Post.class);
+		return pageToPageDto(PageableExecutionUtils.getPage(result, pageable, () -> mongoTemplate.count(Query.of(dynamicQuery).limit(-1).skip(-1), Post.class)));
 	}
 
 	@Override
-	public PageDto getMatchingFounds(Integer itemsOnPage, Integer currentPage, PostDto postDto) {
-		Pageable pageable = PageRequest.of(currentPage, itemsOnPage);
-		Post post = createPostExample(postDto);	
-		post.setTypePost(true);
-//		Point point = new Point(postDto.getLocation().getLongitude(), postDto.getLocation().getLatitude());
-//		Distance distance = new Distance(lostFoundConfiguration.getRadius(), Metrics.KILOMETERS);
-		Example<Post> example = Example.of(post, createExampleMatcher());
-		Page<Post> page = postRepository.findAll(example, pageable);
-//		Page<Post> page = postRepository.findByLocationNear(point, distance, pageable);
-		return pageToPageDto(page);
-	}
-
-	private Post createPostExample(PostDto postDto) {		
-		return Post.builder()
-				.type(postDto.getType())
-				.breed(postDto.getBreed())
-				.sex(postDto.getSex())
-				.address(postDto.getAddress())
-				.location(postDto.getLocation())
-				.tags(postDto.getTags())
-				.build();
+	public PageDto getMatchingFounds(Integer itemsOnPage, Integer currentPage, PostDto postDto) {		
+		postDto.setTypePost(true);
+		return queryBuilder(itemsOnPage, currentPage, postDto);
 	}
 
 	@Override

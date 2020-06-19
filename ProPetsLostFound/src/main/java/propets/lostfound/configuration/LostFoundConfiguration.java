@@ -31,7 +31,9 @@ public class LostFoundConfiguration {
 	@Value("${spring.application.name}")
 	String applicationName;
 	@Value("${radius}")
-	Integer radius;
+	Double radius;
+	@Value("${distanceMultiplier}")
+	Double distanceMultiplier;
 	@Value("${asyncSearchUri}")
-	String asyncSearchUri;
+	String asyncSearchUri;	
 }
