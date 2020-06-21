@@ -5,6 +5,8 @@ import java.util.Set;
 
 import propets.lostfound.dto.PageDto;
 import propets.lostfound.dto.PostDto;
+import propets.lostfound.dto.UserUpdateDto;
+import propets.lostfound.model.Post;
 
 public interface PostService {
 	PostDto postLost (String login, PostDto postDto);
@@ -18,4 +20,5 @@ public interface PostService {
 	PageDto getMatchingFounds(Integer itemsOnPage, Integer currentPage, PostDto postDto);
 	List<String> getTags(String imageUrl);	
 	Set<PostDto> getPostsForUserData(Set<String> postId);
+	Set<Post> updateUserPosts(UserUpdateDto userUpdateDto);
 }

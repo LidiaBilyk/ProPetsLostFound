@@ -29,6 +29,7 @@ import propets.lostfound.configuration.LostFoundConfiguration;
 import propets.lostfound.dao.PostRepository;
 import propets.lostfound.dto.PageDto;
 import propets.lostfound.dto.PostDto;
+import propets.lostfound.dto.UserUpdateDto;
 import propets.lostfound.dto.imagga.ColorResponseDto;
 import propets.lostfound.dto.imagga.TagResponseDto;
 import propets.lostfound.exceptions.BadRequestException;
@@ -212,18 +213,15 @@ public class PostServiceImpl implements PostService {
 		Query dynamicQuery = new Query();
 		Criteria typePostCriteria = Criteria.where("typePost").is(postDto.isTypePost());
 		dynamicQuery.addCriteria(typePostCriteria);
-		if (postDto.getType() != null) {
-			Criteria typeCriteria = Criteria.where("type").regex("\\Q" + postDto.getType() + "\\E", "i");			
+		if (postDto.getType() != null) {						
 //			Criteria orType = new Criteria().orOperator(typeCriteria,Criteria.where("type").is(null));    =====> doesn't need, not null in DB
-			dynamicQuery.addCriteria(typeCriteria);
+			dynamicQuery.addCriteria(Criteria.where("type").regex("\\Q" + postDto.getType() + "\\E", "i"));
 		}
-		if (postDto.getSex() != null) {						
-		    Criteria orSex =  Criteria.where("sex").in(postDto.getSex(), null);
-			dynamicQuery.addCriteria(orSex);
+		if (postDto.getSex() != null) {		    
+			dynamicQuery.addCriteria(Criteria.where("sex").in(postDto.getSex(), null));
 		}
-		if (postDto.getBreed() != null) {			
-			Criteria orBreed = Criteria.where("breed").in(Pattern.compile("\\Q" + postDto.getBreed() + "\\E", Pattern.CASE_INSENSITIVE), null);
-			dynamicQuery.addCriteria(orBreed);
+		if (postDto.getBreed() != null) {
+			dynamicQuery.addCriteria(Criteria.where("breed").in(Pattern.compile("\\Q" + postDto.getBreed() + "\\E", Pattern.CASE_INSENSITIVE), null));
 		}
 		if (postDto.getTags() != null) {
 			Set<Pattern> tagPattern = postDto.getTags().stream().map(t -> Pattern.compile("\\Q" + t + "\\E", Pattern.CASE_INSENSITIVE)).collect(Collectors.toSet());
@@ -282,11 +280,28 @@ public class PostServiceImpl implements PostService {
 	}
 
 	@Override
-	public Set<PostDto> getPostsForUserData(Set<String> postId) {		
-		Iterable<Post> res = postRepository.findAllById(postId);		
-		Set<PostDto> result = StreamSupport.stream(res.spliterator(), false)
+	public Set<PostDto> getPostsForUserData(Set<String> postId) {				
+		return StreamSupport.stream(postRepository.findAllById(postId).spliterator(), false)
 		.map(d -> postToPostDto(d))		
 		.collect(Collectors.toSet());		
-		return result;
+		 
+	}
+
+	@Override
+	public Set<Post> updateUserPosts(UserUpdateDto userUpdateDto) {	
+		return StreamSupport.stream(postRepository.findAllById(userUpdateDto.getPostId()).spliterator(), false)
+				.map(p -> updateUser(userUpdateDto, p))
+				.map(p -> postRepository.save(p))
+				.collect(Collectors.toSet());
+	}
+	
+	private Post updateUser(UserUpdateDto userUpdateDto, Post post) { 
+		if (userUpdateDto.getUsername() != null) {
+			post.setUsername(userUpdateDto.getUsername());
+		}
+		if (userUpdateDto.getAvatar() != null) {
+			post.setAvatar(userUpdateDto.getAvatar());
+		}
+		return post;
 	}
 }

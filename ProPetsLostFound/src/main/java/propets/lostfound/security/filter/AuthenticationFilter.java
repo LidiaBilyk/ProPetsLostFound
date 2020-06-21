@@ -43,7 +43,7 @@ public class AuthenticationFilter implements Filter{
 		HttpServletResponse response = (HttpServletResponse) resp;
 		String path = request.getServletPath();
 		String method = request.getMethod();
-		if (!checkPointCut(path, method)) {				
+		if (!checkPointCut(path, method)) {	
 			String auth = request.getHeader("X-Token");
 			HttpHeaders headers = new HttpHeaders();
 			headers.add("X-Token", auth);
@@ -70,7 +70,7 @@ public class AuthenticationFilter implements Filter{
 	}
 	
 	private boolean checkPointCut(String path, String method) {
-		boolean check = path.matches(".*/userdata");		
+		boolean check = path.matches(".*/userdata") || path.matches(".*/updateuser");		
 		return check;
 	}
 

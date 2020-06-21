@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import propets.lostfound.dto.PageDto;
 import propets.lostfound.dto.PostDto;
+import propets.lostfound.dto.UserUpdateDto;
+import propets.lostfound.model.Post;
 import propets.lostfound.service.PostService;
 
 @RestController
@@ -78,5 +80,10 @@ public class PostController {
 	@PostMapping("/userdata")
 	public Set<PostDto> getPostsForUserData(@RequestBody Set<String> postId) {
 		return postService.getPostsForUserData(postId);
+	}
+	
+	@PutMapping("/updateuser")
+	public Set<Post> updateUserPosts(@RequestBody UserUpdateDto userUpdateDto) {	
+		return postService.updateUserPosts(userUpdateDto);
 	}
 }
