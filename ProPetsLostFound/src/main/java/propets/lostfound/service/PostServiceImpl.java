@@ -5,6 +5,7 @@ import java.net.URISyntaxException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -206,7 +207,7 @@ public class PostServiceImpl implements PostService {
 		return queryBuilder(itemsOnPage, currentPage, postDto);
 	}
 
-	private PageDto queryBuilder(Integer itemsOnPage, Integer currentPage, PostDto postDto) {
+	private PageDto queryBuilder(Integer itemsOnPage, Integer currentPage, PostDto postDto) { 
 		Pageable pageable = PageRequest.of(currentPage, itemsOnPage);		
 		Query dynamicQuery = new Query();
 		Criteria typePostCriteria = Criteria.where("typePost").is(postDto.isTypePost());
@@ -221,11 +222,12 @@ public class PostServiceImpl implements PostService {
 			dynamicQuery.addCriteria(orSex);
 		}
 		if (postDto.getBreed() != null) {			
-			Criteria orBreed = Criteria.where("breed").in("/^" + postDto.getBreed() + "/i", null);
+			Criteria orBreed = Criteria.where("breed").in(Pattern.compile("\\Q" + postDto.getBreed() + "\\E", Pattern.CASE_INSENSITIVE), null);
 			dynamicQuery.addCriteria(orBreed);
 		}
-		if (postDto.getTags() != null) {	
-			Criteria tagsCriteria = Criteria.where("tags").all(postDto.getTags());
+		if (postDto.getTags() != null) {
+			Set<Pattern> tagPattern = postDto.getTags().stream().map(t -> Pattern.compile("\\Q" + t + "\\E", Pattern.CASE_INSENSITIVE)).collect(Collectors.toSet());
+			Criteria tagsCriteria = Criteria.where("tags").all(tagPattern);
 			dynamicQuery.addCriteria(tagsCriteria);
 		}
 		if (postDto.getLocation() != null) {
