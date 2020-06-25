@@ -82,6 +82,11 @@ public class PostController {
 		return postService.getPostsForUserData(postId);
 	}
 	
+	@PostMapping("/userdata/{login}")
+	public Set<PostDto> getPostsForUserData(@PathVariable String login) {
+		return postService.getPostsForUserData(login);
+	}
+	
 	@PutMapping("/updateuser")
 	public Set<Post> updateUserPosts(@RequestBody UserUpdateDto userUpdateDto) {	
 		return postService.updateUserPosts(userUpdateDto);

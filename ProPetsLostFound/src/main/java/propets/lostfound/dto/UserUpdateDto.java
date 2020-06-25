@@ -1,6 +1,5 @@
 package propets.lostfound.dto;
 
-import java.util.Set;
 import lombok.Getter;
 
 
@@ -8,5 +7,5 @@ import lombok.Getter;
 public class UserUpdateDto {	
 	String username;
 	String avatar;
-	Set<String> postId;
+	String login;
 }

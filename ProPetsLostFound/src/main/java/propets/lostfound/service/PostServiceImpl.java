@@ -283,13 +283,18 @@ public class PostServiceImpl implements PostService {
 	public Set<PostDto> getPostsForUserData(Set<String> postId) {				
 		return StreamSupport.stream(postRepository.findAllById(postId).spliterator(), false)
 		.map(d -> postToPostDto(d))		
-		.collect(Collectors.toSet());		
-		 
+		.collect(Collectors.toSet());		 
+	}
+	
+
+	@Override
+	public Set<PostDto> getPostsForUserData(String login) {		
+		return postRepository.findByUserLogin(login).stream().map(p -> postToPostDto(p)).collect(Collectors.toSet());
 	}
 
 	@Override
 	public Set<Post> updateUserPosts(UserUpdateDto userUpdateDto) {	
-		return StreamSupport.stream(postRepository.findAllById(userUpdateDto.getPostId()).spliterator(), false)
+		return postRepository.findByUserLogin(userUpdateDto.getLogin()).stream()
 				.map(p -> updateUser(userUpdateDto, p))
 				.map(p -> postRepository.save(p))
 				.collect(Collectors.toSet());

@@ -1,5 +1,7 @@
 package propets.lostfound.dao;
 
+import java.util.Set;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
@@ -10,6 +12,7 @@ public interface PostRepository extends MongoRepository<Post, String> {
 	
 	Page<Post> findByTypePostTrue(Pageable pageable);
 	Page<Post> findByTypePostFalse(Pageable pageable);
+	Set<Post> findByUserLogin(String userLogin);
 //	@Query("{$and:[\r\n" + 
 //			"{$or:[{\"type\": { \"$regex\" : \"\\\\Q?0\\\\E\", \"$options\" : \"i\"}}, {\"type\": null}]}, \r\n" + 
 //			"{$or:[{\"sex\": { \"$regex\" : \"\\\\Q?1\\\\E\", \"$options\" : \"i\"}}, {\"sex\": null}]},\r\n" + 

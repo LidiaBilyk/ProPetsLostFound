@@ -20,5 +20,6 @@ public interface PostService {
 	PageDto getMatchingFounds(Integer itemsOnPage, Integer currentPage, PostDto postDto);
 	List<String> getTags(String imageUrl);	
 	Set<PostDto> getPostsForUserData(Set<String> postId);
+	Set<PostDto> getPostsForUserData(String login);
 	Set<Post> updateUserPosts(UserUpdateDto userUpdateDto);
 }
