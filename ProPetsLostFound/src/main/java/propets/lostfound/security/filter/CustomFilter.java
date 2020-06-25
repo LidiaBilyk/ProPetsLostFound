@@ -72,7 +72,7 @@ public class CustomFilter implements Filter {
 	}
 	
 	private boolean checkPointCut(String path, String method) {
-		boolean check = path.matches(".*/userdata") || path.matches(".*/updateuser");		
+		boolean check = path.matches(".*/userdata.*") || path.matches(".*/updateuser");		
 		return check;
 	}
 	

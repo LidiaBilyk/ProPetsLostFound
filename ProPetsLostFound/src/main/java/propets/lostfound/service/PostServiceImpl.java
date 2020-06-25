@@ -268,7 +268,7 @@ public class PostServiceImpl implements PostService {
 	
 
 	@Override
-	public Set<PostDto> getPostsForUserData(String login) {		
+	public Set<PostDto> getPostsForUserData(String login) {	
 		return postRepository.findByUserLogin(login).stream().map(p -> postToPostDto(p)).collect(Collectors.toSet());
 	}
 
