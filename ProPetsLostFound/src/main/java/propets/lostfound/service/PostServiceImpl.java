@@ -55,7 +55,6 @@ public class PostServiceImpl implements PostService {
 		Post post = createNewPost(login, postDto);		
 		post.setTypePost(false);
 		postRepository.save(post);
-		sendToActivities(post.getUserLogin(), post.getId(), HttpMethod.PUT);
 		sendToAsyncSearch(post);
 		return postToPostDto(post);
 	}
@@ -69,24 +68,6 @@ public class PostServiceImpl implements PostService {
 		} catch (RestClientException e) {
 			throw new ConflictException();
 		} catch (URISyntaxException e) {
-			throw new BadRequestException();
-		}		
-	}
-
-	private void sendToActivities(String userLogin, String id, HttpMethod method) {
-		RestTemplate restTemplate = new RestTemplate();	
-		String activityTemplate = "/activity/";
-		HttpHeaders headers = new HttpHeaders();
-		headers.add("X-ServiceName", lostFoundConfiguration.getApplicationName());		
-		try {
-			RequestEntity<String> restRequest = new RequestEntity<>(headers, method, 
-					new URI(lostFoundConfiguration.getActivityUri().concat(userLogin).concat(activityTemplate).concat(id)));
-			ResponseEntity<String>restResponse = restTemplate.exchange(restRequest, String.class);
-		} catch (RestClientException e) {
-			throw new ConflictException();
-		} 
-		catch (URISyntaxException e) {	
-			e.printStackTrace();
 			throw new BadRequestException();
 		}		
 	}
@@ -172,7 +153,6 @@ public class PostServiceImpl implements PostService {
 	public PostDto deletePost(String id) {
 		Post post = postRepository.findById(id).orElseThrow(() -> new NotFoundException());
 		postRepository.deleteById(id);
-		sendToActivities(post.getUserLogin(), id, HttpMethod.DELETE);
 		post.setId(MARK + post.getId());
 		System.out.println(post.getId());
 		sendToAsyncSearch(post);
