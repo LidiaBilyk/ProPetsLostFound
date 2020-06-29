@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -29,14 +28,12 @@ import propets.lostfound.configuration.LostFoundConfiguration;
 import propets.lostfound.dao.PostRepository;
 import propets.lostfound.dto.PageDto;
 import propets.lostfound.dto.PostDto;
-import propets.lostfound.dto.UserUpdateDto;
 import propets.lostfound.dto.imagga.ColorResponseDto;
 import propets.lostfound.dto.imagga.TagResponseDto;
 import propets.lostfound.exceptions.BadRequestException;
 import propets.lostfound.exceptions.ConflictException;
 import propets.lostfound.exceptions.NotFoundException;
 import propets.lostfound.model.Post;
-
 
 @Service
 public class PostServiceImpl implements PostService {
@@ -137,6 +134,9 @@ public class PostServiceImpl implements PostService {
 		}
 		if (postDto.getAddress() != null) {
 			post.setAddress(postDto.getAddress());
+		}
+		if (postDto.getLocation() != null) {
+			post.setLocation(postDto.getLocation());
 		}
 		if (postDto.getTags() != null) {
 			post.setTags(postDto.getTags());
@@ -247,46 +247,13 @@ public class PostServiceImpl implements PostService {
 			throw new ConflictException();			
 		}		 
 		List<String> colors = responseColor.getBody().getResult().getColors().getForegroundColors().stream().map(e -> e.getParentName()).distinct().collect(Collectors.toList());
-		System.out.println(colors);
+		
 //get tags		
 		builder = UriComponentsBuilder.fromHttpUrl(tagUrl).queryParam("image_url", imageUrl).queryParam("threshold", 35);
 		request = new RequestEntity<>(headers, HttpMethod.GET, builder.build().toUri());
 		ResponseEntity<TagResponseDto>responseTag = restTemplate.exchange(request, TagResponseDto.class);
-		List<String> tags = responseTag.getBody().getResult().getTags().stream().map(e -> e.getTag().getWord()).collect(Collectors.toList());
- 		System.out.println(tags);
- 		
+		List<String> tags = responseTag.getBody().getResult().getTags().stream().map(e -> e.getTag().getWord()).collect(Collectors.toList()); 		
  		tags.addAll(colors);
 		return tags;
-	}
-
-	@Override
-	public Set<PostDto> getPostsForUserData(Set<String> postId) {				
-		return StreamSupport.stream(postRepository.findAllById(postId).spliterator(), false)
-		.map(d -> postToPostDto(d))		
-		.collect(Collectors.toSet());		 
-	}
-	
-
-	@Override
-	public Set<PostDto> getPostsForUserData(String login) {	
-		return postRepository.findByUserLogin(login).stream().map(p -> postToPostDto(p)).collect(Collectors.toSet());
-	}
-
-	@Override
-	public Set<Post> updateUserPosts(UserUpdateDto userUpdateDto) {	
-		return postRepository.findByUserLogin(userUpdateDto.getLogin()).stream()
-				.map(p -> updateUser(userUpdateDto, p))
-				.map(p -> postRepository.save(p))
-				.collect(Collectors.toSet());
-	}
-	
-	private Post updateUser(UserUpdateDto userUpdateDto, Post post) { 
-		if (userUpdateDto.getUsername() != null) {
-			post.setUsername(userUpdateDto.getUsername());
-		}
-		if (userUpdateDto.getAvatar() != null) {
-			post.setAvatar(userUpdateDto.getAvatar());
-		}
-		return post;
 	}
 }

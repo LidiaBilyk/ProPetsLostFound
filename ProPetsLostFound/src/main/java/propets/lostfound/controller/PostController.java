@@ -1,8 +1,6 @@
 package propets.lostfound.controller;
 
 import java.util.List;
-import java.util.Set;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,11 +11,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
 import propets.lostfound.dto.PageDto;
 import propets.lostfound.dto.PostDto;
-import propets.lostfound.dto.UserUpdateDto;
-import propets.lostfound.model.Post;
 import propets.lostfound.service.PostService;
 
 @RestController
@@ -75,20 +70,5 @@ public class PostController {
 	@GetMapping("/tagscolors")
 	public List<String> getTags(@RequestParam("image_url") String imageUrl) {
 		return postService.getTags(imageUrl);
-	}
-
-	@PostMapping("/userdata")
-	public Set<PostDto> getPostsForUserData(@RequestBody Set<String> postId) {
-		return postService.getPostsForUserData(postId);
-	}
-	
-	@GetMapping("/userdata/{login:.*}")
-	public Set<PostDto> getPostsForUserData(@PathVariable String login) {
-		return postService.getPostsForUserData(login);
-	}
-	
-	@PutMapping("/updateuser")
-	public Set<Post> updateUserPosts(@RequestBody UserUpdateDto userUpdateDto) {	
-		return postService.updateUserPosts(userUpdateDto);
 	}
 }
